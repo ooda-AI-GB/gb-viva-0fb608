@@ -1,30 +1,85 @@
 {% extends "layout/base.html" %}
 
 {% block content %}
-<div class="top-bar">
-    <h1>Pricing</h1>
+<style>
+    .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    .plan-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+    }
+    .plan-card.premium {
+        border-color: var(--primary);
+        box-shadow: 0 4px 6px -1px rgba(8, 145, 178, 0.1), 0 2px 4px -1px rgba(8, 145, 178, 0.06);
+    }
+    .plan-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    .plan-price {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 2rem;
+        color: var(--text-primary);
+    }
+    .features-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 2rem 0;
+        flex: 1;
+    }
+    .features-list li {
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        color: var(--text-secondary);
+    }
+    .features-list li::before {
+        content: "✓";
+        color: var(--success);
+        margin-right: 0.5rem;
+        font-weight: bold;
+    }
+</style>
+
+<div class="mb-4 text-center" style="text-align: center; margin-bottom: 3rem;">
+    <h1>Simple, transparent pricing</h1>
+    <p class="text-gray">Choose the plan that fits your support needs.</p>
 </div>
 
 <div class="pricing-grid">
+    <!-- Free Plan -->
     <div class="plan-card">
         <div class="plan-title">Free</div>
-        <div class="plan-price">$0 / month</div>
+        <div class="plan-price">$0 <span style="font-size: 1rem; font-weight: normal; color: var(--text-secondary);">/ month</span></div>
         <ul class="features-list">
-            <li>Unlimited notes</li>
-            <li>Create, edit, delete</li>
-            <li>3 sample notes</li>
-            <li>Secure storage</li>
+            <li>Up to 50 tickets/month</li>
+            <li>Knowledge base</li>
+            <li>Email support</li>
+            <li>Basic reporting</li>
         </ul>
-        <a href="/auth/login" class="btn btn-outline" style="width: 100%; display: block; text-align: center;">Get Started</a>
+        <a href="/auth/login" class="btn btn-secondary" style="width: 100%; text-align: center;">Get Started</a>
     </div>
 
+    <!-- Premium Plan -->
     <div class="plan-card premium">
-        <div class="plan-title">Premium</div>
-        <div class="plan-price">$9 / month</div>
+        <div class="plan-title" style="color: var(--primary);">Premium</div>
+        <div class="plan-price">$29 <span style="font-size: 1rem; font-weight: normal; color: var(--text-secondary);">/ month</span></div>
         <ul class="features-list">
             <li>Everything in Free</li>
-            <li>AI Summarization</li>
-            <li>AI Chat (Coming Soon)</li>
+            <li>Unlimited tickets</li>
+            <li>AI Response Suggestions</li>
+            <li>SLA Tracking</li>
             <li>Priority Support</li>
         </ul>
         <form action="/subscribe" method="post">

@@ -1,0 +1,184 @@
+{% extends "layout/base.html" %}
+
+{% block content %}
+<div class="flex justify-between items-start mb-4">
+    <div>
+        <h1 class="mb-2">{{ ticket.subject }}</h1>
+        <div class="flex gap-2 items-center text-sm text-gray">
+            <span>Ticket #{{ ticket.id }}</span>
+            <span>•</span>
+            <span>Created {{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+            <span>•</span>
+            <span>{{ ticket.customer_name }} ({{ ticket.customer_email }})</span>
+        </div>
+    </div>
+    <div class="flex gap-2">
+        <a href="/tickets/{{ ticket.id }}/edit" class="btn btn-secondary">Edit</a>
+        {% if ticket.status != 'resolved' and ticket.status != 'closed' %}
+        <form action="/tickets/{{ ticket.id }}/resolve" method="post" style="display:inline;">
+            <button type="submit" class="btn btn-success">Mark Resolved</button>
+        </form>
+        {% endif %}
+        {% if ticket.status != 'closed' %}
+        <form action="/tickets/{{ ticket.id }}/close" method="post" style="display:inline;">
+            <button type="submit" class="btn btn-secondary">Close</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="flex gap-4" style="align-items: flex-start;">
+    <!-- Main Thread -->
+    <div style="flex: 2;">
+        <div class="card mb-4">
+            <h3 class="mb-2 text-gray text-sm">Description</h3>
+            <div style="white-space: pre-wrap;">{{ ticket.description }}</div>
+        </div>
+
+        <h3 class="mb-4">Discussion</h3>
+        
+        {% for reply in replies %}
+        <div class="card mb-4" style="background-color: {% if reply.is_internal %}#fffbeb{% elif reply.author == ticket.customer_email or reply.author == ticket.customer_name %}#f8fafc{% else %}white{% endif %}; border-left: 4px solid {% if reply.is_internal %}var(--warning){% elif reply.author == ticket.customer_email or reply.author == ticket.customer_name %}var(--text-secondary){% else %}var(--primary){% endif %};">
+            <div class="flex justify-between mb-2">
+                <span style="font-weight: bold;">{{ reply.author }}</span>
+                <span class="text-gray text-sm">{{ reply.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+            </div>
+            {% if reply.is_internal %}
+            <span class="badge" style="background-color: var(--warning); color: #92400e; margin-bottom: 0.5rem;">Internal Note</span>
+            {% endif %}
+            <div style="white-space: pre-wrap;">{{ reply.content }}</div>
+        </div>
+        {% endfor %}
+
+        <div class="card">
+            <h3 class="mb-2">Add Reply</h3>
+            <form action="/tickets/{{ ticket.id }}/reply" method="post">
+                <div class="form-group">
+                    <div class="flex justify-between items-center mb-2">
+                        <label for="content">Message</label>
+                        <button type="button" class="btn btn-secondary text-sm" onclick="suggestReply()">✨ AI Suggest Reply</button>
+                    </div>
+                    <textarea name="content" id="replyContent" rows="5" required></textarea>
+                </div>
+                <div class="form-group flex items-center gap-2">
+                    <input type="checkbox" name="is_internal" id="is_internal" value="true" style="width: auto;">
+                    <label for="is_internal" style="margin-bottom: 0;">Internal Note (visible only to agents)</label>
+                </div>
+                <button type="submit" class="btn btn-primary">Send Reply</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sidebar Info -->
+    <div style="flex: 1; max-width: 300px;">
+        <div class="card">
+            <h3 class="mb-4">Details</h3>
+            
+            <div class="mb-4">
+                <div class="text-sm text-gray mb-1">Status</div>
+                <span class="badge badge-status-{{ ticket.status }}">{{ ticket.status|replace('_', ' ')|title }}</span>
+            </div>
+            
+            <div class="mb-4">
+                <div class="text-sm text-gray mb-1">Priority</div>
+                <span class="badge badge-priority-{{ ticket.priority }}">{{ ticket.priority|title }}</span>
+            </div>
+            
+            <div class="mb-4">
+                <div class="text-sm text-gray mb-1">Category</div>
+                <span class="badge badge-category badge-category-{{ ticket.category }}">{{ ticket.category|replace('_', ' ')|title }}</span>
+            </div>
+            
+            <div class="mb-4">
+                <div class="text-sm text-gray mb-1">Assigned To</div>
+                <div>{{ ticket.assigned_to or 'Unassigned' }}</div>
+            </div>
+            
+            <div class="mb-4">
+                <div class="text-sm text-gray mb-1">SLA Due</div>
+                <div style="{% if ticket.sla_due and ticket.sla_due < ticket.created_at.utcnow() and ticket.status not in ['resolved', 'closed'] %}color: var(--danger); font-weight: bold;{% endif %}">
+                    {{ ticket.sla_due.strftime('%Y-%m-%d %H:%M') if ticket.sla_due else 'None' }}
+                </div>
+            </div>
+            
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 1rem 0;">
+            
+            <h4 class="mb-2 text-sm text-gray">AI Actions</h4>
+            <div class="flex flex-col gap-2">
+                <button type="button" class="btn btn-secondary text-sm w-full" onclick="suggestSummary()">Generate Summary</button>
+                <button type="button" class="btn btn-secondary text-sm w-full" onclick="suggestCategorization()">Analyze Sentiment/Category</button>
+            </div>
+            <div id="aiResult" style="margin-top: 1rem; font-size: 0.9rem; padding: 0.5rem; background: #f8fafc; border-radius: 0.5rem; display: none;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function suggestReply() {
+    const btn = event.target;
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Generating...";
+    
+    try {
+        const formData = new FormData();
+        formData.append('ticket_id', {{ ticket.id }});
+        formData.append('suggestion_type', 'reply_draft');
+        
+        const response = await fetch('/api/ai/suggest', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        if (data.error) {
+            alert('Error: ' + data.error);
+        } else {
+            document.getElementById('replyContent').value = data.content;
+        }
+    } catch (e) {
+        console.error(e);
+        alert('Error generating reply');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+}
+
+async function suggestSummary() {
+    callAI('summary');
+}
+
+async function suggestCategorization() {
+    callAI('categorization');
+}
+
+async function callAI(type) {
+    const resultDiv = document.getElementById('aiResult');
+    resultDiv.style.display = 'block';
+    resultDiv.textContent = "Analyzing...";
+    
+    try {
+        const formData = new FormData();
+        formData.append('ticket_id', {{ ticket.id }});
+        formData.append('suggestion_type', type);
+        
+        const response = await fetch('/api/ai/suggest', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        if (data.error) {
+            resultDiv.textContent = 'Error: ' + data.error;
+            resultDiv.style.color = 'var(--danger)';
+        } else {
+            resultDiv.textContent = data.content;
+            resultDiv.style.color = 'var(--text-primary)';
+        }
+    } catch (e) {
+        resultDiv.textContent = 'Error: ' + e;
+    }
+}
+</script>
+{% endblock %}

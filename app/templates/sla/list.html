@@ -1,0 +1,88 @@
+{% extends "layout/base.html" %}
+
+{% block content %}
+<h1 class="mb-4">SLA Management</h1>
+
+<div class="card mb-6">
+    <h2 class="mb-4">SLA Policies</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Priority</th>
+                <th>Response Time (hrs)</th>
+                <th>Resolution Time (hrs)</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for policy in policies %}
+            <tr>
+                <td>{{ policy.name }}</td>
+                <td><span class="badge badge-priority-{{ policy.priority }}">{{ policy.priority|title }}</span></td>
+                <td>{{ policy.response_hours }}h</td>
+                <td>{{ policy.resolution_hours }}h</td>
+                <td>
+                    {% if policy.active %}
+                    <span class="badge badge-status-resolved">Active</span>
+                    {% else %}
+                    <span class="badge badge-status-closed">Inactive</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-center">No policies found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <!-- Simple Add Form -->
+    <details class="mt-4">
+        <summary style="cursor: pointer; color: var(--primary);">Add New Policy</summary>
+        <form action="/sla" method="post" class="mt-4">
+            <div class="flex gap-4">
+                <input type="text" name="name" placeholder="Policy Name" required>
+                <select name="priority" required>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                </select>
+                <input type="number" name="response_hours" placeholder="Response (hrs)" required>
+                <input type="number" name="resolution_hours" placeholder="Resolution (hrs)" required>
+                <button type="submit" class="btn btn-primary">Add</button>
+            </div>
+        </form>
+    </details>
+</div>
+
+<div class="card">
+    <h2 class="mb-4" style="color: var(--danger);">SLA Breach Report</h2>
+    <p class="text-gray mb-4">Tickets that have exceeded their resolution deadline.</p>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Ticket ID</th>
+                <th>Subject</th>
+                <th>Priority</th>
+                <th>Due Date</th>
+                <th>Assigned To</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ticket in breached_tickets %}
+            <tr>
+                <td><a href="/tickets/{{ ticket.id }}">#{{ ticket.id }}</a></td>
+                <td>{{ ticket.subject }}</td>
+                <td><span class="badge badge-priority-{{ ticket.priority }}">{{ ticket.priority|title }}</span></td>
+                <td style="color: var(--danger); font-weight: bold;">{{ ticket.sla_due.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ ticket.assigned_to or '-' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-center text-gray">No breached tickets. Great job!</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

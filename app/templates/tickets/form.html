@@ -1,0 +1,82 @@
+{% extends "layout/base.html" %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 0 auto;">
+    <h1 class="mb-4">{% if ticket %}Edit Ticket{% else %}New Ticket{% endif %}</h1>
+    
+    <form action="{% if ticket %}/tickets/{{ ticket.id }}/edit{% else %}/tickets/new{% endif %}" method="post">
+        <div class="form-group">
+            <label for="subject">Subject</label>
+            <input type="text" id="subject" name="subject" value="{{ ticket.subject if ticket else '' }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" rows="5" required>{{ ticket.description if ticket else '' }}</textarea>
+        </div>
+        
+        <div class="flex gap-4 mb-4">
+            <div class="form-group" style="flex: 1;">
+                <label for="priority">Priority</label>
+                <select id="priority" name="priority" required>
+                    <option value="low" {% if ticket and ticket.priority == 'low' %}selected{% endif %}>Low</option>
+                    <option value="medium" {% if ticket and ticket.priority == 'medium' %}selected{% endif %}>Medium</option>
+                    <option value="high" {% if ticket and ticket.priority == 'high' %}selected{% endif %}>High</option>
+                    <option value="urgent" {% if ticket and ticket.priority == 'urgent' %}selected{% endif %}>Urgent</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="flex: 1;">
+                <label for="category">Category</label>
+                <select id="category" name="category" required>
+                    <option value="bug" {% if ticket and ticket.category == 'bug' %}selected{% endif %}>Bug</option>
+                    <option value="feature_request" {% if ticket and ticket.category == 'feature_request' %}selected{% endif %}>Feature Request</option>
+                    <option value="question" {% if ticket and ticket.category == 'question' %}selected{% endif %}>Question</option>
+                    <option value="billing" {% if ticket and ticket.category == 'billing' %}selected{% endif %}>Billing</option>
+                    <option value="account" {% if ticket and ticket.category == 'account' %}selected{% endif %}>Account</option>
+                    <option value="other" {% if ticket and ticket.category == 'other' %}selected{% endif %}>Other</option>
+                </select>
+            </div>
+        </div>
+        
+        {% if not ticket %}
+        <!-- Customer Info only on create (assumed read-only or handled differently on edit, but spec allows edit form to use same template) -->
+        <!-- Wait, edit route might update customer? The route `update_ticket` does NOT update customer info. Only status/priority/etc. -->
+        <!-- So I should hide these on edit or make them read-only display -->
+        <div class="flex gap-4 mb-4">
+            <div class="form-group" style="flex: 1;">
+                <label for="customer_email">Customer Email</label>
+                <input type="email" id="customer_email" name="customer_email" required>
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label for="customer_name">Customer Name</label>
+                <input type="text" id="customer_name" name="customer_name">
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="form-group">
+            <label for="assigned_to">Assigned To</label>
+            <input type="text" id="assigned_to" name="assigned_to" value="{{ ticket.assigned_to if ticket else '' }}" placeholder="Agent Name or Team">
+        </div>
+        
+        {% if ticket %}
+        <div class="form-group">
+            <label for="status">Status</label>
+            <select id="status" name="status" required>
+                <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>Open</option>
+                <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                <option value="waiting" {% if ticket.status == 'waiting' %}selected{% endif %}>Waiting</option>
+                <option value="resolved" {% if ticket.status == 'resolved' %}selected{% endif %}>Resolved</option>
+                <option value="closed" {% if ticket.status == 'closed' %}selected{% endif %}>Closed</option>
+            </select>
+        </div>
+        {% endif %}
+        
+        <div class="flex justify-between items-center mt-4">
+            <a href="{% if ticket %}/tickets/{{ ticket.id }}{% else %}/tickets{% endif %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">{% if ticket %}Update Ticket{% else %}Create Ticket{% endif %}</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

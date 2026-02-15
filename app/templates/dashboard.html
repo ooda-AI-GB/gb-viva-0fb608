@@ -1,0 +1,80 @@
+{% extends "layout/base.html" %}
+
+{% block content %}
+<h1 class="mb-4">Dashboard</h1>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+    <!-- Quick Stats -->
+    <div class="card">
+        <h3 class="text-gray text-sm">Total Tickets</h3>
+        <div style="font-size: 2rem; font-weight: bold;">{{ total_tickets }}</div>
+    </div>
+    <div class="card">
+        <h3 class="text-gray text-sm">Open Tickets</h3>
+        <div style="font-size: 2rem; font-weight: bold; color: var(--primary);">{{ open_tickets }}</div>
+    </div>
+    <div class="card">
+        <h3 class="text-gray text-sm">Resolved Today</h3>
+        <div style="font-size: 2rem; font-weight: bold; color: var(--success);">{{ resolved_today }}</div>
+    </div>
+    <div class="card">
+        <h3 class="text-gray text-sm">SLA Breached</h3>
+        <div style="font-size: 2rem; font-weight: bold; color: var(--danger);">{{ breached_sla }}</div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+    <!-- Recent Tickets -->
+    <div class="card">
+        <h2 class="mb-4">Recent Tickets</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Subject</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in recent_tickets %}
+                <tr>
+                    <td><a href="/tickets/{{ ticket.id }}" style="text-decoration: none; color: inherit; font-weight: 500;">{{ ticket.subject }}</a></td>
+                    <td><span class="badge badge-status-{{ ticket.status }}">{{ ticket.status|replace('_', ' ')|title }}</span></td>
+                    <td><span class="badge badge-priority-{{ ticket.priority }}">{{ ticket.priority|title }}</span></td>
+                    <td class="text-gray text-sm">{{ ticket.created_at.strftime('%Y-%m-%d') }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" style="text-align: center;">No tickets found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="mt-4" style="text-align: right;">
+            <a href="/tickets" class="btn btn-secondary text-sm">View All Tickets</a>
+        </div>
+    </div>
+
+    <!-- Status Overview -->
+    <div class="card">
+        <h2 class="mb-4">Status Overview</h2>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            {% for status, count in status_dict.items() %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border);">
+                <span class="badge badge-status-{{ status }}">{{ status|replace('_', ' ')|title }}</span>
+                <span style="font-weight: bold;">{{ count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <h2 class="mb-4 mt-4">Priority Breakdown</h2>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            {% for priority, count in priority_dict.items() %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border);">
+                <span class="badge badge-priority-{{ priority }}">{{ priority|title }}</span>
+                <span style="font-weight: bold;">{{ count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

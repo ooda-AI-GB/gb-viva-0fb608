@@ -1,0 +1,60 @@
+{% extends "layout/base.html" %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-4">
+    <h1>Knowledge Base</h1>
+    {% if user %}
+    <a href="/knowledge/new" class="btn btn-primary">New Article</a>
+    {% endif %}
+</div>
+
+<div class="card mb-4">
+    <form action="/knowledge" method="get" class="flex gap-2">
+        <input type="text" name="search" placeholder="Search articles..." value="{{ search or '' }}" style="flex: 1;">
+        <button type="submit" class="btn btn-primary">Search</button>
+        {% if search %}
+        <a href="/knowledge" class="btn btn-secondary">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+    <!-- Categories -->
+    <div>
+        {% for category, cat_articles in grouped_articles.items() %}
+            {% if cat_articles %}
+            <h2 class="mb-2" style="text-transform: capitalize;">{{ category|replace('_', ' ') }}</h2>
+            <div class="card mb-4">
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                    {% for article in cat_articles %}
+                    <li style="border-bottom: 1px solid var(--border); padding: 0.5rem 0;">
+                        <a href="/knowledge/{{ article.id }}" style="text-decoration: none; font-weight: 500; color: var(--primary);">{{ article.title }}</a>
+                        <div class="text-sm text-gray mt-1">{{ article.content[:100] }}...</div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        {% endfor %}
+        
+        {% if not articles %}
+        <div class="text-center text-gray p-4">No articles found.</div>
+        {% endif %}
+    </div>
+    
+    <!-- Most Viewed -->
+    <div>
+        <div class="card">
+            <h3 class="mb-4">Most Viewed</h3>
+            <ul style="list-style: none; padding: 0; margin: 0;">
+                {% for article in most_viewed %}
+                <li style="margin-bottom: 1rem;">
+                    <a href="/knowledge/{{ article.id }}" style="text-decoration: none; color: var(--text-primary); font-weight: 500;">{{ article.title }}</a>
+                    <div class="text-sm text-gray">{{ article.views }} views</div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
